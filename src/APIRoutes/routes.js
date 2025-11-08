@@ -1,0 +1,11 @@
+const api = process.env.REACT_APP_API_URL;
+// export const api = "${API_URL}/;
+export const LOGIN = `${api}/login`;
+export const SIGN_UP = `${api}/signup`;
+export const SUBMIT_IDEA = `${api}/submit-idea`;
+export const GET_IDEAS = `${api}/get-ideas`;
+export const GET_IDEA_BY_ID = `${api}/get-idea/:id`;
+export const GET_IDEAS_BY_USER = `${api}/get-ideas-by-user`;
+export const UPDATE_IDEA = `${api}/update-idea/:id`;
+export const DELETE = `${api}/delete-idea/:id`;
+export const BOARD = `${api}/generate-report`;

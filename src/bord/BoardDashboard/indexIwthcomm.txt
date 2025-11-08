@@ -1,0 +1,214 @@
+// This will be the simplified main file after modularization.
+// Full content will be added after splitting components
+
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import axios from 'axios';
+import { Users, FileText, Settings, CheckCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchUserData } from '../../redux/UserSlice';
+import Documents from '../Documents';
+import ReportGenerator from '../ReportGenerator';
+import BoardMembers from './BoardMembers';
+import ChatBox from './ChatBox';
+import VoteSection from './VoteSection';
+import ConfirmationModal from './ConfirmationModal';
+import NextMeeting from './NextMeeting';
+// import MeetingRoom from "../../component/videoMeeting/MeetingRoom"
+
+const BoardDashboard = () => {
+  const [activeSection, setActiveSection] = useState('dashboard');
+  // const [showNotification, setShowNotification] = useState(false);
+  // const [showVoteConfirmation, setShowVoteConfirmation] = useState(false);
+  // const [selectedMember, setSelectedMember] = useState();
+  const [boardMembers, setBoardMembers] = useState([]);
+  const [ideaOwnerId, setIdeaOwnerId] = useState(null);
+  const dispatch = useDispatch();
+  const userData = useSelector((state) => state.userData); // adjust path if needed
+
+  const navigate = useNavigate();
+  const { ideaId } = useParams(); // ✅ get the ideaId from URL
+
+  useEffect(() => {
+    dispatch(fetchUserData());
+  }, [dispatch]);
+
+  // Fetch the idea owner ID
+  useEffect(() => {
+    if (ideaId) {
+      axios
+        .get(`http://localhost:3001/api/v1/get-idea/${ideaId}`)
+
+        .then((res) => {
+          console.log('response of get idea', res.data.user._id);
+          setIdeaOwnerId(res.data.user._id); // Assuming ownerId is returned
+          // console.log("ownerID", ideaOwnerId);
+        })
+        .catch((err) => console.error('Error fetching idea:', err));
+    }
+  }, [ideaId]);
+  // console.log("cureUser ID",userData.userData._id);
+  const [votes, setVotes] = useState({
+    releaseFunds: 0,
+    extendTime: 0,
+    refundInvestors: 0,
+  });
+  const [currentVoteType, setCurrentVoteType] = useState(null);
+
+  // console.log("ideaId",ideaId);
+
+  // feth Board
+  useEffect(() => {
+    const fetchBoardMembers = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:3001/api/v1/${ideaId}/members`,
+          {
+            credentials: 'include', // if you're using cookies/auth
+          }
+        );
+        const data = await response.json();
+        console.log('memebrs', data);
+        setBoardMembers(data);
+      } catch (error) {
+        console.error('Error fetching board members:', error);
+      }
+    };
+    if (ideaId) {
+      fetchBoardMembers();
+    }
+  }, [ideaId]);
+  // const showConfirmModal = (type) => {
+  //   setCurrentVoteType(type);
+  //   setShowVoteConfirmation(true);
+  // };
+
+  // const confirmVote = () => {
+  //   setVotes({ ...votes, [currentVoteType]: votes[currentVoteType] + 1 });
+  //   setShowVoteConfirmation(false);
+  //   setShowNotification(true);
+  //   setTimeout(() => setShowNotification(false), 3000);
+  // };
+
+  const chairman = {
+    name: 'John Smith',
+    accountDetails: '1234-5678-9012-3456',
+    bankName: 'Commercial Bank of Ethiopia',
+  };
+
+  const renderMainContent = () => {
+    switch (activeSection) {
+      case 'dashboard':
+        return (
+          <>
+            <button
+              type="button"
+              className="bg-green-600 text-white px-4 py-2 rounded-lg"
+              onClick={() =>
+                navigate('/MeetingRoom', {
+                  state: {
+                    // later use this room
+                    // roomName : `idea-${ideaId}-${[userId, otherUserId].sort().join("-")}`,
+                    roomName: 'test-2',
+                    userId: `${userData.userData?._id}`,
+                    ideaOwnerId,
+                  },
+                })
+              }
+            >
+              Video Meeting
+            </button>
+            <ReportGenerator
+              ideaId={ideaId}
+              boardMembers={boardMembers}
+              votes={votes}
+            />
+            <NextMeeting ideaId={ideaId} />
+            <BoardMembers boardMembers={boardMembers} votes={votes} />
+            {/* <ChatBox
+              ideaId={ideaId}
+              boardMembers={boardMembers}
+              votes={votes}
+            /> */}
+            {/* <button className="px-4 w-auto py-2 bg-green-600 text-white rounded-lg hover:bg-blue-700">
+              Video Meeting
+            </button> */}
+
+            <VoteSection
+              votes={votes}
+              setVotes={setVotes}
+              // showConfirmModal={showConfirmModal}
+              ideaId={ideaId}
+              voterId={userData.userData?._id}
+              boardMembers={boardMembers}
+            />
+          </>
+        );
+      // case 'documents':
+      // return <Documents />;
+      // case 'settings':
+      //   return null;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-lg">
+        <div className="p-6">
+          <h1 className="text-2xl font-bold text-blue-600">EthioCapital</h1>
+          <p className="text-sm text-gray-600">Board Management System</p>
+        </div>
+        <nav className="mt-6">
+          {['dashboard'].map(
+            (
+              section //setting,documents removed from array
+            ) => (
+              <button
+                key={section}
+                onClick={() => setActiveSection(section)}
+                className={`w-full flex items-center gap-3 px-6 py-3 hover:bg-gray-50 ${
+                  activeSection === section
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700'
+                }`}
+              >
+                {
+                  {
+                    dashboard: <Users size={20} />,
+                    documents: <FileText size={20} />,
+                    // settings: <Settings size={20} />,
+                  }[section]
+                }
+                {section.charAt(0).toUpperCase() + section.slice(1)}
+              </button>
+            )
+          )}
+        </nav>
+      </div>
+
+      <div className="ml-64 p-8">{renderMainContent()}</div>
+
+      {/* {showNotification && (
+        <div className="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2">
+          <CheckCircle size={20} />
+          {votes.releaseFunds >= 3
+            ? `Fund release approved! Funds will be transferred to ${chairman.bankName} account ${chairman.accountDetails}`
+            : "Vote recorded successfully"}
+        </div>
+      )} */}
+
+      {/* {showVoteConfirmation && (
+        <ConfirmationModal
+          onCancel={() => setShowVoteConfirmation(false)}
+          onConfirm={confirmVote}
+          chairman={chairman}
+        />
+      )} */}
+    </div>
+  );
+};
+
+export default BoardDashboard;
